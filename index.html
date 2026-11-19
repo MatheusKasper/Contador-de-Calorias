@@ -43,8 +43,9 @@ summary{cursor:pointer;font-weight:600}.msg{color:var(--mut);font-size:14px;padd
  <button id="cam" class="pri">📷 Foto do prato</button><input type="file" id="f" accept="image/*" capture="environment" hidden>
  <div id="res" style="margin-top:10px"></div>
  <div id="man" hidden>
-  <div class="grid"><div><label>kcal</label><input id="mk" type="number" inputmode="decimal"></div><div><label>Proteína (g)</label><input id="mp" type="number" inputmode="decimal"></div><div><label>Carbo (g)</label><input id="mc" type="number" inputmode="decimal"></div><div><label>Gordura (g)</label><input id="mf" type="number" inputmode="decimal"></div></div>
-  <button id="madd" class="pri" style="margin-top:8px">Adicionar</button>
+  <p class="msg" style="margin:0 0 8px">Valores de 1 porção. Sem kcal? Preencha os macros que eu calculo.</p>
+  <div class="grid"><div style="grid-column:1/-1"><label>Porção (opcional)</label><input id="mpo" placeholder="ex: 1 fatia, 100 g, 1 pote"></div><div><label>kcal</label><input id="mk" type="number" inputmode="decimal"></div><div><label>Proteína (g)</label><input id="mp" type="number" inputmode="decimal"></div><div><label>Carbo (g)</label><input id="mc" type="number" inputmode="decimal"></div><div><label>Gordura (g)</label><input id="mf" type="number" inputmode="decimal"></div></div>
+  <label class="msg" style="display:block;margin:8px 0"><input type="checkbox" id="msv" checked style="width:auto;margin-right:6px">Salvar no meu catálogo</label><button id="madd" class="pri">Adicionar</button>
  </div>
 </section>
 
@@ -63,6 +64,7 @@ summary{cursor:pointer;font-weight:600}.msg{color:var(--mut);font-size:14px;padd
  <button id="calc" style="margin:10px 0;width:100%">Calcular meta</button>
  <div class="grid"><div><label>kcal/dia</label><input id="gk" type="number"></div><div><label>Proteína (g)</label><input id="gp" type="number"></div><div><label>Carbo (g)</label><input id="gc" type="number"></div><div><label>Gordura (g)</label><input id="gf" type="number"></div></div>
  <button id="gs" class="pri" style="margin-top:10px">Salvar meta</button>
+ <h2 style="margin-top:14px">Meus alimentos</h2><div id="cus"></div>
  <p class="msg">Estimativa pela fórmula de Mifflin-St Jeor. Para metas específicas, fale com um nutricionista.</p>
 </details>
 </main>
@@ -72,9 +74,140 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 // [nome, porção, kcal, proteína, carbo, gordura]
-const FOODS=[["Arroz branco cozido","100 g",128,2.5,28,.2],["Feijão cozido","100 g",76,4.8,13.6,.5],["Peito de frango grelhado","100 g",159,32,0,2.5],["Carne bovina grelhada","100 g",220,30,0,10],["Ovo cozido","1 un",78,6,.6,5.3],["Ovo mexido","1 un",95,6.5,.7,7],["Pão francês","1 un (50 g)",150,4.7,29,1.6],["Pão de forma","2 fatias",130,4,24,1.5],["Pão de queijo","1 un (30 g)",95,2,10,5],["Tapioca","1 un (50 g)",170,0,42,0],["Queijo mussarela","2 fatias (30 g)",100,7,.7,7.5],["Presunto","2 fatias (30 g)",45,5,.5,2.5],["Leite integral","200 ml",122,6.4,9.4,6.6],["Iogurte natural","170 g",105,7,9,4],["Café sem açúcar","1 xícara",5,.3,.8,0],["Banana","1 un",90,1.1,23,.3],["Maçã","1 un",70,.4,19,.2],["Laranja","1 un",62,1.2,15,.2],["Batata cozida","100 g",52,1.2,12,0],["Batata frita","100 g",312,3.4,41,15],["Macarrão cozido","100 g",158,5.8,31,.9],["Aveia","30 g",117,4,20,2],["Whey protein","1 scoop (30 g)",120,24,3,1.5],["Pizza","1 fatia",270,11,33,10],["Hambúrguer","1 un",300,15,30,13],["Salada de alface e tomate","1 prato",25,1.5,5,.2],["Refrigerante","1 lata",140,0,35,0],["Suco de laranja","200 ml",90,1.4,21,.4],["Chocolate","25 g",135,1.5,14,8],["Açaí","200 g",250,3,30,13]];
+const RAW=`Arroz branco cozido|100 g|128|2.5|28|.2
+Arroz integral cozido|100 g|124|2.6|26|1
+Feijão cozido|100 g|76|4.8|13.6|.5
+Feijão preto cozido|100 g|77|4.5|14|.5
+Lentilha cozida|100 g|93|6.3|16|.5
+Grão-de-bico cozido|100 g|164|8.9|27|2.6
+Macarrão cozido|100 g|158|5.8|31|.9
+Macarrão à bolonhesa|1 prato (250 g)|380|18|45|13
+Purê de batata|100 g|90|1.8|14|3
+Batata cozida|100 g|52|1.2|12|0
+Batata doce cozida|100 g|77|.6|18|.1
+Batata frita|100 g|312|3.4|41|15
+Mandioca cozida|100 g|125|.6|30|.3
+Farofa|50 g|225|1.5|30|11
+Polenta cozida|100 g|70|1.5|15|.3
+Cuscuz de milho|100 g|113|2.2|25|.7
+Tapioca|1 un (50 g)|170|0|42|0
+Pão francês|1 un (50 g)|150|4.7|29|1.6
+Pão de forma|2 fatias|130|4|24|1.5
+Pão integral|2 fatias|140|6|24|2
+Pão de queijo|1 un (30 g)|95|2|10|5
+Torrada|2 un|60|2|11|1
+Bolo simples|1 fatia (60 g)|220|3.5|33|8.5
+Biscoito cream cracker|3 un (15 g)|65|1.4|10|2
+Biscoito recheado|3 un (30 g)|140|1.5|20|6
+Granola|30 g|130|3|20|4
+Aveia|30 g|117|4|20|2
+Cereal matinal|30 g|115|2|26|.5
+Peito de frango grelhado|100 g|159|32|0|2.5
+Coxa de frango assada|1 un (100 g)|215|26|0|12
+Frango frito|1 coxa|260|20|9|16
+Frango à parmegiana|1 filé (150 g)|350|30|18|18
+Strogonoff de frango|1 prato (200 g)|330|28|12|18
+Carne bovina grelhada|100 g|220|30|0|10
+Bife acebolado|100 g|200|28|3|8
+Carne moída refogada|100 g|212|26|0|11
+Picanha grelhada|100 g|290|26|0|20
+Costela assada|100 g|310|25|0|23
+Linguiça toscana grelhada|1 un (80 g)|240|13|1|20
+Linguiça calabresa frita|1 un (80 g)|260|12|2|23
+Bacon frito|2 fatias (16 g)|85|6|0|7
+Presunto|2 fatias (30 g)|45|5|.5|2.5
+Peito de peru|2 fatias (30 g)|35|6|1|.5
+Salsicha cozida|1 un (50 g)|135|5.5|2|12
+Hambúrguer bovino grelhado|1 un (90 g)|240|20|0|17
+Filé de tilápia grelhado|100 g|128|26|0|2.7
+Salmão grelhado|100 g|208|22|0|13
+Atum em lata|1 lata (120 g)|130|29|0|1
+Sardinha em lata|1 lata (90 g)|190|22|0|11
+Camarão cozido|100 g|99|21|1|1
+Ovo cozido|1 un|78|6|.6|5.3
+Ovo mexido|1 un|95|6.5|.7|7
+Ovo frito|1 un|110|7|.5|8.5
+Omelete (2 ovos)|1 un|190|13|1|15
+Leite integral|200 ml|122|6.4|9.4|6.6
+Leite desnatado|200 ml|70|7|10|.4
+Iogurte natural|170 g|105|7|9|4
+Iogurte grego|1 pote (100 g)|100|9|4|5
+Requeijão|1 col. sopa (30 g)|75|2|1|7
+Queijo mussarela|2 fatias (30 g)|100|7|.7|7.5
+Queijo minas frescal|1 fatia (30 g)|70|5|1|5
+Queijo prato|2 fatias (30 g)|110|7|.5|9
+Queijo parmesão ralado|1 col. sopa (10 g)|40|3.5|0|3
+Cream cheese|1 col. sopa (20 g)|70|1.5|1|7
+Manteiga|1 col. chá (5 g)|36|0|0|4
+Margarina|1 col. chá (5 g)|33|0|0|3.7
+Azeite|1 col. sopa (13 ml)|115|0|0|13
+Banana|1 un|90|1.1|23|.3
+Maçã|1 un|70|.4|19|.2
+Laranja|1 un|62|1.2|15|.2
+Mamão|1 fatia (150 g)|60|.7|15|.1
+Melancia|1 fatia (200 g)|60|1.2|15|.3
+Manga|1 un (200 g)|120|1|30|.5
+Uva|1 cacho (100 g)|69|.7|18|.2
+Morango|10 un (150 g)|50|1|12|.5
+Abacate|100 g|160|2|9|15
+Abacaxi|1 fatia (100 g)|50|.5|13|.1
+Pera|1 un|85|.5|23|.2
+Tangerina|1 un|45|.7|11|.2
+Salada de alface e tomate|1 prato|25|1.5|5|.2
+Brócolis cozido|100 g|35|2.4|7|.4
+Cenoura cozida|100 g|35|.8|8|.2
+Legumes refogados|100 g|60|1.5|8|2.5
+Amendoim|30 g|170|7.5|5|14
+Castanha-do-pará|3 un (12 g)|80|1.7|1.3|8
+Pasta de amendoim|1 col. sopa (15 g)|90|3.5|3|7.5
+Chocolate ao leite|25 g|135|1.8|14|8
+Brigadeiro|1 un|80|1|12|3.5
+Sorvete|1 bola (60 g)|120|2|15|6
+Pizza de mussarela|1 fatia|270|12|31|10
+Pizza de calabresa|1 fatia|290|12|31|13
+Pizza de frango com catupiry|1 fatia|285|13|30|12
+Pizza portuguesa|1 fatia|285|13|31|12
+Pizza margherita|1 fatia|250|11|30|9
+Pizza de quatro queijos|1 fatia|300|14|30|14
+Hambúrguer (lanche)|1 un|300|15|30|13
+X-burguer|1 un|420|22|35|22
+X-salada|1 un|470|24|38|24
+X-bacon|1 un|550|28|38|31
+Cachorro-quente|1 un|330|11|30|18
+Coxinha|1 un (100 g)|260|8|27|13
+Pastel de carne (frito)|1 un|300|9|28|17
+Pastel de queijo (frito)|1 un|310|9|27|19
+Empada|1 un|200|4|18|12
+Esfiha de carne|1 un|220|9|28|8
+Kibe frito|1 un (70 g)|190|8|15|11
+Misto quente|1 un|330|15|30|16
+Sanduíche natural|1 un|280|14|30|10
+Wrap de frango|1 un|350|20|35|13
+Sushi (uramaki)|8 un|300|10|50|6
+Temaki|1 un|250|10|35|7
+Lasanha|1 porção (250 g)|420|22|38|20
+Feijoada|1 prato (300 g)|480|30|28|27
+Escondidinho de carne|1 porção (250 g)|380|20|32|18
+Açaí|200 g|250|3|30|13
+Whey protein|1 scoop (30 g)|120|24|3|1.5
+Barra de proteína|1 un (45 g)|180|15|18|6
+Barra de cereal|1 un (22 g)|90|1|17|2
+Café sem açúcar|1 xícara|5|.3|.8|0
+Café com leite|1 xícara (150 ml)|70|3.5|6|3.5
+Açúcar|1 col. chá (5 g)|20|0|5|0
+Suco de laranja|200 ml|90|1.4|21|.4
+Suco de uva integral|200 ml|130|0|32|0
+Água de coco|200 ml|40|0|10|0
+Vitamina de banana com leite|300 ml|230|8|40|5
+Refrigerante|1 lata (350 ml)|140|0|35|0
+Refrigerante zero|1 lata (350 ml)|0|0|0|0
+Cerveja|1 lata (350 ml)|150|1.5|13|0
+Vinho tinto|1 taça (150 ml)|125|0|4|0
+Energético|1 lata (250 ml)|110|0|27|0`;
+const FOODS=RAW.split("\n").map(r=>{const a=r.split("|");return [a[0],a[1],+a[2],+a[3],+a[4],+a[5]]});
 let S=null;try{S=JSON.parse(localStorage.getItem("cal")||"null")}catch(e){}
 S=S||{g:{k:2000,p:120,c:240,f:60},days:{},rec:[]};
+S.cus=S.cus||[];
 const save=()=>{try{localStorage.setItem("cal",JSON.stringify(S))}catch(e){}};
 const key=(d)=>(d||new Date()).toLocaleDateString("sv");
 const day=()=>S.days[key()]||(S.days[key()]=[]);
@@ -98,11 +231,13 @@ function render(){
   let h="";for(let i=6;i>=0;i--){const d=new Date(Date.now()-i*864e5),k=key(d),tot=(S.days[k]||[]).reduce((a,x)=>a+x.k,0);
     h+=`<div><i style="height:${Math.min(tot/g.k,1.2)*70}px${tot>g.k?";background:var(--bad)":""}"></i>${d.toLocaleDateString("pt-BR",{weekday:"short"}).slice(0,3)}</div>`}
   $("#hist").innerHTML=h;
+  $("#cus").innerHTML=S.cus.length?S.cus.map((x,i)=>`<div class="li"><span>${esc(x[0])}<small>${esc(x[1])} · ${x[2]} kcal</small></span><button class="ghost" data-dc="${i}" aria-label="Remover">✕</button></div>`).join(""):'<div class="msg">Nenhum ainda. Itens criados manualmente aparecem aqui.</div>';
 }
 function showRes(){
   const q=norm($("#q").value.trim()),box=$("#res");
-  let rows=q?FOODS.filter(f=>norm(f[0]).includes(q)).slice(0,6):S.rec.slice(0,5);
-  let html=rows.map((f,i)=>`<button class="item" data-i="${i}"><span>${esc(f[0])} <small>${esc(f[1])}</small></span><small>${f[2]} kcal</small></button>`).join("");
+  const ws=q.split(/\s+/).filter(Boolean);
+  let rows=q?S.cus.concat(FOODS).filter(f=>{const n=norm(f[0]);return ws.every(w=>n.includes(w))}).slice(0,8):S.rec.slice(0,5);
+  let html=rows.map((f,i)=>`<button class="item" data-i="${i}"><span>${S.cus.includes(f)?"★ ":""}${esc(f[0])} <small>${esc(f[1])}</small></span><small>${f[2]} kcal</small></button>`).join("");
   if(!q&&rows.length)html='<div class="msg">Recentes</div>'+html;
   if(q)html+=`<button class="item" data-manual="1"><span>＋ Criar “${esc($("#q").value.trim())}” manualmente</span></button>`;
   box.innerHTML=html;box._rows=rows;
@@ -116,10 +251,15 @@ $("#res").addEventListener("click",e=>{
   const f=$("#res")._rows[+b.dataset.i];if(f)add(f[0],f[1],f[2],f[3],f[4],f[5],parseFloat($("#qty").value)||1);
 });
 $("#madd").onclick=()=>{
-  const k=parseFloat($("#mk").value);if(!(k>=0))return $("#mk").focus();
-  add($("#q").value.trim()||"Item","",k,parseFloat($("#mp").value)||0,parseFloat($("#mc").value)||0,parseFloat($("#mf").value)||0,parseFloat($("#qty").value)||1);
-  ["#mk","#mp","#mc","#mf"].forEach(s=>$(s).value="");
+  const p=parseFloat($("#mp").value)||0,c=parseFloat($("#mc").value)||0,f=parseFloat($("#mf").value)||0;
+  let k=parseFloat($("#mk").value);if(isNaN(k)&&(p||c||f))k=Math.round(4*p+4*c+9*f);
+  if(!(k>=0))return $("#mk").focus();
+  const n=$("#q").value.trim()||"Item",por=$("#mpo").value.trim();
+  if($("#msv").checked){S.cus=S.cus.filter(x=>norm(x[0])!==norm(n));S.cus.unshift([n,por,k,p,c,f])}
+  add(n,por,k,p,c,f,parseFloat($("#qty").value)||1);
+  ["#mk","#mp","#mc","#mf","#mpo"].forEach(x=>$(x).value="");render();
 };
+$("#cus").addEventListener("click",e=>{const b=e.target.closest("[data-dc]");if(!b)return;S.cus.splice(+b.dataset.dc,1);save();render();showRes()});
 $("#list").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;day().splice(+b.dataset.del,1);save();render()});
 
 // Foto do prato
