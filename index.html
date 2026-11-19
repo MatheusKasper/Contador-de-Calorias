@@ -2,6 +2,9 @@
 <html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Calorias</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#121110">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{--bg:#121110;--card:#1c1a18;--line:#2e2a26;--tx:#efe9e2;--mut:#9a9088;--ac:#c8854a;--ok:#8fb573;--bad:#d9604c;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f6f1ea;--card:#fff;--line:#e3d9cc;--tx:#2a2420;--mut:#7a6e63;--ac:#a8631f;--ok:#4f7a35;--bad:#b8402e;color-scheme:light}}
@@ -168,5 +171,6 @@ $("#gs").onclick=()=>{
   save();$("#cfg").open=false;render();
 };
 (async()=>{try{if(!(await claude.use("sample")))$("#cam").hidden=true}catch(e){$("#cam").hidden=true}})();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js");
 fillCfg();$("#cfg").open=!S.pr;render();showRes();
 </script></body></html>
